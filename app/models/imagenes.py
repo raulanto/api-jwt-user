@@ -17,6 +17,5 @@ class Image(db.Model):
             "filename": self.filename,
             "filepath": self.filepath,
             "uploaded_at": self.uploaded_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "usuario": self.usuario.nombre,
-
+            "usuario": self.usuario.username
         }

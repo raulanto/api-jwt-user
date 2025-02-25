@@ -7,3 +7,5 @@ __pycache__
 .idea
 database.sqlite
 migrations
+
+!/uploads/.gitkeep
