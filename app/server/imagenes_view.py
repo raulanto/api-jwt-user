@@ -1,16 +1,17 @@
 import json
+import os
 
 import flask_jwt_extended
-from flask import request, jsonify, current_app, make_response
+from flask import request, current_app
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restful import Resource
-import os
 from werkzeug.utils import secure_filename
+
 from app import db
-from app.middleware import role_required
 from app.models import Image
-from config import Config
 from app.models import User
+from config import Config
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
@@ -51,6 +52,8 @@ class UploadImage(Resource):
             return {"message": "Imagen subida exitosamente"}
 
         return {"message": "Extensión de archivo no permitida"}, 400
+
+
 
 class GetImages(Resource):
     @jwt_required()

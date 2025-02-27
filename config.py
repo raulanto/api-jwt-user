@@ -10,7 +10,7 @@ class Config(object):
     JWT_ERROR_MESSAGE_KEY = "error"
     JWT_BLACKLIST_ENABLED = True
     JWT_BLACKLIST_TOKEN_CHECKS = ["access", "refresh"]
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'database.sqlite')}"
+    SQLALCHEMY_DATABASE_URI = "mssql+pyodbc://raulanto:raulanto@localhost/pruebas?driver=ODBC+Driver+17+for+SQL+Server"
 
     # archivos
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))

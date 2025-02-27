@@ -11,15 +11,21 @@ from flask_restful import Resource
 
 from app import bcrypt, db, jwt
 from app.errors import error_response
-from app.middleware import role_required
+from app.middleware import  role_required_permission, token_not_expired, roles_required
 from app.models import User, SesionUsuario
 
 blacklist = set()
+
+
 
 @jwt.token_in_blocklist_loader
 def check_if_token_in_blacklist(jwt_header, jwt_payload):
     jti = jwt_payload["jti"]
     return jti in blacklist
+
+
+
+
 
 class Register(Resource):
     def post(self):
@@ -38,16 +44,14 @@ class Register(Resource):
         except Exception as e:
             return {"message": f"Error en el registro: {str(e)}"}, 500
 
+
 class Login(Resource):
     def post(self):
         try:
             data = request.get_json()
-
             if not data or 'username' not in data or 'password' not in data:
                 return {"message": "Faltan datos requeridos"}, 400
-
             user = User.query.filter_by(username=data['username']).first()
-
             if user and bcrypt.check_password_hash(user.password, data['password']):
                 jti = str(uuid.uuid4())
                 identity = json.dumps({"id": user.id, "role": user.role.name})
@@ -66,12 +70,13 @@ class Login(Resource):
         except Exception as e:
             return {"message": f"Error en el login: {str(e)}"}, 500
 
+
 class Logout(Resource):
     @jwt_required()
     def post(self):
         try:
             jti = get_jwt()["jti"]
-            # Buscar la sesión asociada al token
+
             sesion = SesionUsuario.query.filter_by(token_jti=jti).first()
             if not sesion:
                 return error_response(400, "No activa la seccion")
@@ -82,12 +87,13 @@ class Logout(Resource):
             blacklist.add(jti)
             response = make_response(jsonify({"message": "Logout exitoso"}), 200)
             unset_jwt_cookies(response)
-            # Registrar la fecha y hora de salida
+
             sesion.fecha_hora_salida = datetime.utcnow()
             db.session.commit()
             return response
         except Exception as e:
             return {"message": f"Error al cerrar sesión: {str(e)}"}, 500
+
 
 class RefreshToken(Resource):
     @jwt_required(refresh=True)
@@ -99,18 +105,31 @@ class RefreshToken(Resource):
         except Exception as e:
             return {"message": f"Error al refrescar el token: {str(e)}"}, 500
 
+
 class AdminResource(Resource):
-    @role_required('admin')
+    @roles_required('admin')
     def get(self):
         try:
             return {"message": "Bienvenido al panel de administrador"}
         except Exception as e:
             return {"message": f"Error en el panel de administrador: {str(e)}"}, 500
 
+
 class UserResource(Resource):
-    @role_required('user')
+    @roles_required('admin', 'user')
     def get(self):
         try:
             return {"message": "Bienvenido al panel de usuario"}
         except Exception as e:
             return {"message": f"Error en el panel de usuario: {str(e)}"}, 500
+
+
+class UserList(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            users = User.query.all()
+            print(users)
+            return jsonify({"users": [user.list_json() for user in users]})
+        except Exception as e:
+            return {"message": f"Error al obtener los usuarios: {str(e)}"}, 500
